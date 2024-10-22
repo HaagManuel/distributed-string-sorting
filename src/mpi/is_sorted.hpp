@@ -199,14 +199,14 @@ inline bool check_permutation_complete(
 template <typename StringSet>
 void copy_container(StringLcpContainer<StringSet> const& src, StringLcpContainer<StringSet>& dst) {
     
-    // TODO: some problem with this code
-    std::cerr << "TODO: fix copy_container" << std::endl;
-    exit(1);
-    assert(false);
-    // assert(src.is_consistent());
-    // dst.set(std::vector{src.get_strings()});
-    // dst.set(std::vector{src.raw_strings()});
-    // dst.set(std::vector<size_t>(src.size()));
+    assert(src.is_consistent());
+    
+    std::vector<typename StringSet::String> strings{src.get_strings()};
+    std::vector<typename StringSet::Char> raw_strings{src.raw_strings()};
+    std::vector<size_t> lcps(src.size());
+    dst.set(std::move(strings));
+    dst.set(std::move(raw_strings));
+    dst.set(std::move(lcps));
 
     auto const d_begin = dst.raw_strings().data();
     auto const s_begin = src.raw_strings().data();
