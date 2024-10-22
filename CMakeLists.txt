@@ -50,7 +50,7 @@ list(APPEND
   "-Wundef"
   "-Wunreachable-code"
   "-Wno-unused-parameter"
-  "-Wpedantic"
+  # "-Wpedantic"
   "-Wnull-dereference"
   "-Wimplicit-fallthrough"
   "-Wno-vla"

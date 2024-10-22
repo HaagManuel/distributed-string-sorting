@@ -385,7 +385,7 @@ int main(int argc, char* argv[]) {
     } else {
         for (size_t i = 0; i < args.num_iterations; ++i) {
             args.iteration = i;
-            dispatch_common_args([&]<typename... T> { dispatch_sorter<T...>(args); }, args);
+            dispatch_common_args([&]<typename... T>() { dispatch_sorter<T...>(args); }, args);
         }
     }
 

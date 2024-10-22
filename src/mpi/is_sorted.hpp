@@ -198,10 +198,15 @@ inline bool check_permutation_complete(
 
 template <typename StringSet>
 void copy_container(StringLcpContainer<StringSet> const& src, StringLcpContainer<StringSet>& dst) {
-    assert(src.is_consistent());
-    dst.set(std::vector{src.get_strings()});
-    dst.set(std::vector{src.raw_strings()});
-    dst.set(std::vector<size_t>(src.size()));
+    
+    // TODO: some problem with this code
+    std::cerr << "TODO: fix copy_container" << std::endl;
+    exit(1);
+    assert(false);
+    // assert(src.is_consistent());
+    // dst.set(std::vector{src.get_strings()});
+    // dst.set(std::vector{src.raw_strings()});
+    // dst.set(std::vector<size_t>(src.size()));
 
     auto const d_begin = dst.raw_strings().data();
     auto const s_begin = src.raw_strings().data();

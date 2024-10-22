@@ -144,7 +144,7 @@ template <typename Callback, typename CharType>
 void dispatch_alltoall_strings(Callback cb, CommonArgs const& args) {
     using AlltoallKind = dss_mehnert::mpi::AlltoallvCombinedKind;
 
-    auto dispatch_config = [&]<AlltoallKind kind, bool compress_lcps, bool compress_prefixes> {
+    auto dispatch_config = [&]<AlltoallKind kind, bool compress_lcps, bool compress_prefixes>() {
         using dss_mehnert::mpi::AlltoallStringsConfig;
         constexpr AlltoallStringsConfig config{
             .alltoall_kind = kind,
@@ -155,7 +155,7 @@ void dispatch_alltoall_strings(Callback cb, CommonArgs const& args) {
         dispatch_bloomfilter<Callback, CharType, Config>(cb, args);
     };
 
-    auto disptach_prefix_compression = [&]<AlltoallKind kind, bool compress_lcps> {
+    auto disptach_prefix_compression = [&]<AlltoallKind kind, bool compress_lcps>(){
         if (args.prefix_compression) {
             dispatch_config.template operator()<kind, compress_lcps, true>();
         } else {
@@ -163,7 +163,7 @@ void dispatch_alltoall_strings(Callback cb, CommonArgs const& args) {
         }
     };
 
-    auto dispatch_lcp_compression = [&]<AlltoallKind Kind> {
+    auto dispatch_lcp_compression = [&]<AlltoallKind Kind>(){
         if (args.lcp_compression) {
             disptach_prefix_compression.template operator()<Kind, true>();
         } else {
@@ -607,11 +607,11 @@ using SpaceEfficientPartitionPolicy = PolymorphicPartitionPolicy<
 template <typename Char, typename PolymorphicPolicy>
 PolymorphicPolicy
 init_partition_policy(SamplerArgs const& sampler, SplitterSorter splitter_sorter) {
-    auto disptach_policy = [&]<typename PartitionPolicy> {
+    auto disptach_policy = [&]<typename PartitionPolicy>(){
         return PolymorphicPolicy{PartitionPolicy{sampler.sampling_factor}};
     };
 
-    auto dispatch_sorter = [&]<typename SamplePolicy> {
+    auto dispatch_sorter = [&]<typename SamplePolicy>(){
         using namespace dss_mehnert::partition;
 
         constexpr bool indexed = SamplePolicy::is_indexed;
@@ -649,7 +649,7 @@ init_partition_policy(SamplerArgs const& sampler, SplitterSorter splitter_sorter
         tlx_die("unknown splitter sorter");
     };
 
-    auto dispatch_sampler = [&]<bool indexed, bool random> {
+    auto dispatch_sampler = [&]<bool indexed, bool random>(){
         using namespace dss_mehnert::sample;
 
         if (sampler.sample_chars) {
@@ -661,7 +661,7 @@ init_partition_policy(SamplerArgs const& sampler, SplitterSorter splitter_sorter
         }
     };
 
-    auto dispatch_random = [&]<bool indexed> {
+    auto dispatch_random = [&]<bool indexed>(){
         if (sampler.sample_random) {
             return dispatch_sampler.template operator()<indexed, true>();
         } else {

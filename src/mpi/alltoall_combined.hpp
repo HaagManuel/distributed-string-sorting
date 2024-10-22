@@ -10,6 +10,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <span>
 
 #include <kamping/collectives/alltoall.hpp>
 #include <kamping/named_parameter_check.hpp>
@@ -66,7 +67,7 @@ public:
         } else if constexpr (kind == AlltoallvCombinedKind::direct) {
             return alltoallv_direct(send_buf, send_counts, recv_counts);
         } else {
-            []<AlltoallvCombinedKind type_ = kind> {
+            []<AlltoallvCombinedKind type_ = kind> (){
                 static_assert(type_ != type_, "invalid alltoallv combined kind used");
             }
             ();
