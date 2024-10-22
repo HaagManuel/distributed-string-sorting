@@ -90,10 +90,8 @@ struct CommonArgs {
 
     SplitterSorter get_splitter_sorter() const {
         tlx_die_verbose_if(rquick_v1 && rquick_lcp, "RQuick v1 does not support using LCP values");
-        tlx_die_verbose_if(
-            splitter_sequential && (rquick_v1 || rquick_lcp),
-            "can't use both RQuick and sequential sorting"
-        );
+        tlx_die_verbose_if(splitter_sequential && (rquick_v1 || rquick_lcp),
+                           "can't use both RQuick and sequential sorting");
 
         if (splitter_sequential) {
             return SplitterSorter::Sequential;
@@ -116,14 +114,12 @@ inline void parse_level_arg(std::vector<std::string> const& param, std::vector<s
         return std::stoi(str);
     });
 
-    tlx_die_verbose_unless(
-        std::is_sorted(levels.begin(), levels.end(), std::greater_equal<>{}),
-        "the given group sizes must be decreasing"
-    );
+    tlx_die_verbose_unless(std::is_sorted(levels.begin(), levels.end(), std::greater_equal<>{}),
+                           "the given group sizes must be decreasing");
 }
 
-inline auto
-get_first_level(std::vector<size_t> const& levels, dss_mehnert::Communicator const& comm) {
+inline auto get_first_level(std::vector<size_t> const& levels,
+                            dss_mehnert::Communicator const& comm) {
     return std::find_if(levels.begin(), levels.end(), [&](auto const& group_size) {
         return group_size < comm.size();
     });
@@ -155,7 +151,7 @@ void dispatch_alltoall_strings(Callback cb, CommonArgs const& args) {
         dispatch_bloomfilter<Callback, CharType, Config>(cb, args);
     };
 
-    auto disptach_prefix_compression = [&]<AlltoallKind kind, bool compress_lcps>(){
+    auto disptach_prefix_compression = [&]<AlltoallKind kind, bool compress_lcps>() {
         if (args.prefix_compression) {
             dispatch_config.template operator()<kind, compress_lcps, true>();
         } else {
@@ -163,7 +159,7 @@ void dispatch_alltoall_strings(Callback cb, CommonArgs const& args) {
         }
     };
 
-    auto dispatch_lcp_compression = [&]<AlltoallKind Kind>(){
+    auto dispatch_lcp_compression = [&]<AlltoallKind Kind>() {
         if (args.lcp_compression) {
             disptach_prefix_compression.template operator()<Kind, true>();
         } else {
@@ -206,58 +202,44 @@ inline void dispatch_common_args(Callback cb, CommonArgs const& args) {
 
 inline void add_common_args(CommonArgs& args, tlx::CmdlineParser& cp) {
     cp.add_string('e', "experiment", args.experiment, "name to identify the experiment being run");
-    cp.add_size_t(
-        'i',
-        "num-iterations",
-        args.num_iterations,
-        "number of sorting iterations to run"
-    );
+    cp.add_size_t('i',
+                  "num-iterations",
+                  args.num_iterations,
+                  "number of sorting iterations to run");
     cp.add_flag('C', "sample-chars", args.sampler.sample_chars, "use character based sampling");
     cp.add_flag('I', "sample-indexed", args.sampler.sample_indexed, "use indexed sampling");
     cp.add_flag('R', "sample-random", args.sampler.sample_random, "use random sampling");
-    cp.add_size_t(
-        'S',
-        "sampling-factor",
-        args.sampler.sampling_factor,
-        "use the given oversampling factor"
-    );
+    cp.add_size_t('S',
+                  "sampling-factor",
+                  args.sampler.sampling_factor,
+                  "use the given oversampling factor");
     cp.add_flag('Q', "rquick-v1", args.rquick_v1, "use version 1 of RQuick (defaults to v2)");
     cp.add_flag('L', "rquick-lcp", args.rquick_lcp, "use LCP values in RQuick (only with v2)");
     cp.add_flag("splitter-sequential", args.splitter_sequential, "use sequential splitter sorting");
-    cp.add_flag(
-        'l',
-        "lcp-compression",
-        args.lcp_compression,
-        "compress LCP values during string exchange"
-    );
-    cp.add_flag(
-        'p',
-        "prefix-compression",
-        args.prefix_compression,
-        "use LCP compression during string exchange"
-    );
+    cp.add_flag('l',
+                "lcp-compression",
+                args.lcp_compression,
+                "compress LCP values during string exchange");
+    cp.add_flag('p',
+                "prefix-compression",
+                args.prefix_compression,
+                "use LCP compression during string exchange");
     cp.add_flag('d', "prefix-doubling", args.prefix_doubling, "use prefix doubling merge sort");
-    cp.add_flag(
-        'g',
-        "grid-bloomfilter",
-        args.grid_bloomfilter,
-        "use gridwise bloom filter (requires prefix doubling) [default]"
-    );
-    cp.add_size_t(
-        'a',
-        "alltoall",
-        args.alltoall_routine,
-        "All-To-All routine to use during string exchange "
-        "([0]=native, 1=direct, 2=combined)"
-    );
-    cp.add_size_t(
-        't',
-        "redistribution",
-        args.redistribution,
-        "redistribution scheme to use for multi-level sort "
-        "(0=none, 1=naive, 2=simple-strings, 3=simple-chars, "
-        " 4=det-strings, 5=det-chars, [6]=grid)"
-    );
+    cp.add_flag('g',
+                "grid-bloomfilter",
+                args.grid_bloomfilter,
+                "use gridwise bloom filter (requires prefix doubling) [default]");
+    cp.add_size_t('a',
+                  "alltoall",
+                  args.alltoall_routine,
+                  "All-To-All routine to use during string exchange "
+                  "([0]=native, 1=direct, 2=combined)");
+    cp.add_size_t('t',
+                  "redistribution",
+                  args.redistribution,
+                  "redistribution scheme to use for multi-level sort "
+                  "(0=none, 1=naive, 2=simple-strings, 3=simple-chars, "
+                  " 4=det-strings, 5=det-chars, [6]=grid)");
     cp.add_flag('v', "check-sorted", args.check_sorted, "check that the result is sorted");
     cp.add_flag('V', "check-complete", args.check_complete, "check that the result is complete");
     cp.add_flag("verbose", args.verbose, "print some debug output");
@@ -303,9 +285,9 @@ inline void count_prefix_lengths(Container& container, dss_mehnert::Communicator
 }
 
 template <typename SorterArgs, typename GenerateStrings>
-void run_shared_memory(
-    SorterArgs args, dss_mehnert::Communicator const& comm, GenerateStrings generate_strings
-) {
+void run_shared_memory(SorterArgs args,
+                       dss_mehnert::Communicator const& comm,
+                       GenerateStrings generate_strings) {
     tlx_die_unequal(comm.size_signed(), 1);
 
     auto input_container = generate_strings(args, comm);
@@ -334,12 +316,10 @@ void run_shared_memory(
 }
 
 template <typename StringSet, typename SorterArgs, typename GenerateStrings>
-void run_rquick(
-    SorterArgs const& args,
-    std::string prefix,
-    dss_mehnert::Communicator const& comm,
-    GenerateStrings generate_strings
-) {
+void run_rquick(SorterArgs const& args,
+                std::string prefix,
+                dss_mehnert::Communicator const& comm,
+                GenerateStrings generate_strings) {
     using dss_mehnert::measurement::MeasuringTool;
     auto& measuring_tool = MeasuringTool::measuringTool();
     measuring_tool.setPrefix(prefix);
@@ -413,9 +393,8 @@ namespace redistribution {
 
 template <typename StringSet, typename Subcommunicators>
 class PolymorphicRedistributionPolicy
-    : public RedistributionBase<
-          Subcommunicators,
-          PolymorphicRedistributionPolicy<StringSet, Subcommunicators>> {
+    : public RedistributionBase<Subcommunicators,
+                                PolymorphicRedistributionPolicy<StringSet, Subcommunicators>> {
 public:
     using Communicator = Subcommunicators::Communicator;
 
@@ -424,11 +403,9 @@ public:
         : self_{new RedistributionObject<RedistributionPolicy>{std::move(policy)}} {}
 
     template <typename Strings>
-    std::vector<size_t> impl(
-        Strings const& strings,
-        std::vector<size_t> const& intervals,
-        Level<Communicator> const& level
-    ) const {
+    std::vector<size_t> impl(Strings const& strings,
+                             std::vector<size_t> const& intervals,
+                             Level<Communicator> const& level) const {
         return self_->impl(strings, intervals, level);
     }
 
@@ -436,17 +413,13 @@ private:
     struct RedistributionConcept {
         virtual ~RedistributionConcept() = default;
 
-        virtual std::vector<size_t> impl(
-            FullStrings<StringSet> const& strings,
-            std::vector<size_t> const& intervals,
-            Level<Communicator> const& level
-        ) const = 0;
+        virtual std::vector<size_t> impl(FullStrings<StringSet> const& strings,
+                                         std::vector<size_t> const& intervals,
+                                         Level<Communicator> const& level) const = 0;
 
-        virtual std::vector<size_t> impl(
-            Prefixes const& prefixes,
-            std::vector<size_t> const& intervals,
-            Level<Communicator> const& level
-        ) const = 0;
+        virtual std::vector<size_t> impl(Prefixes const& prefixes,
+                                         std::vector<size_t> const& intervals,
+                                         Level<Communicator> const& level) const = 0;
     };
 
     template <typename RedistributionPolicy>
@@ -454,19 +427,15 @@ private:
         explicit RedistributionObject(RedistributionPolicy policy)
             : RedistributionPolicy{std::move(policy)} {}
 
-        virtual std::vector<size_t> impl(
-            FullStrings<StringSet> const& strings,
-            std::vector<size_t> const& intervals,
-            Level<Communicator> const& level
-        ) const override {
+        virtual std::vector<size_t> impl(FullStrings<StringSet> const& strings,
+                                         std::vector<size_t> const& intervals,
+                                         Level<Communicator> const& level) const override {
             return RedistributionPolicy::impl(strings, intervals, level);
         }
 
-        virtual std::vector<size_t> impl(
-            Prefixes const& prefixes,
-            std::vector<size_t> const& intervals,
-            Level<Communicator> const& level
-        ) const override {
+        virtual std::vector<size_t> impl(Prefixes const& prefixes,
+                                         std::vector<size_t> const& intervals,
+                                         Level<Communicator> const& level) const override {
             return RedistributionPolicy::impl(prefixes, intervals, level);
         }
     };
@@ -541,12 +510,10 @@ public:
         : self_{new PartitionObject<PartitionPolicy>{std::move(policy)}} {}
 
     template <typename SamplerArg>
-    std::vector<size_t> compute_partition(
-        StringPtr const& strptr,
-        size_t const num_partitions,
-        SamplerArg const arg,
-        Communicator const& comm
-    ) const {
+    std::vector<size_t> compute_partition(StringPtr const& strptr,
+                                          size_t const num_partitions,
+                                          SamplerArg const arg,
+                                          Communicator const& comm) const {
         return self_->compute_partition(strptr, num_partitions, arg, comm);
     }
 
@@ -555,12 +522,10 @@ private:
     struct PartitionConcept_ {
         virtual ~PartitionConcept_() = default;
 
-        virtual std::vector<size_t> compute_partition(
-            StringPtr const& strptr,
-            size_t const num_partitions,
-            SamplerArg const arg,
-            Communicator const& comm
-        ) const = 0;
+        virtual std::vector<size_t> compute_partition(StringPtr const& strptr,
+                                                      size_t const num_partitions,
+                                                      SamplerArg const arg,
+                                                      Communicator const& comm) const = 0;
     };
 
     struct PartitionConcept : public PartitionConcept_<SamplerArgs>... {
@@ -569,12 +534,10 @@ private:
 
     template <typename PartitionPolicy, typename SamplerArg>
     struct PartitionObject_ : public virtual PartitionConcept, private virtual PartitionPolicy {
-        virtual std::vector<size_t> compute_partition(
-            StringPtr const& strptr,
-            size_t const num_partitions,
-            SamplerArg const arg,
-            Communicator const& comm
-        ) const override {
+        virtual std::vector<size_t> compute_partition(StringPtr const& strptr,
+                                                      size_t const num_partitions,
+                                                      SamplerArg const arg,
+                                                      Communicator const& comm) const override {
             return PartitionPolicy::compute_partition(strptr, num_partitions, arg, comm);
         }
     };
@@ -592,10 +555,10 @@ using MergeSortPartitionPolicy =
     PolymorphicPartitionPolicy<StringSet<Char, Length>, sample::MaxLength>;
 
 template <typename Char, typename LengthType, typename Permutation>
-using PrefixDoublingPartitionPolicy = PolymorphicPartitionPolicy<
-    sorter::AugmentedStringSet<StringSet<Char, LengthType>, Permutation>,
-    sample::NoExtraArg,
-    sample::DistPrefixes>;
+using PrefixDoublingPartitionPolicy =
+    PolymorphicPartitionPolicy<sorter::AugmentedStringSet<StringSet<Char, LengthType>, Permutation>,
+                               sample::NoExtraArg,
+                               sample::DistPrefixes>;
 
 template <typename Char, typename LengthType, typename Permutation>
 using SpaceEfficientPartitionPolicy = PolymorphicPartitionPolicy<
@@ -605,13 +568,13 @@ using SpaceEfficientPartitionPolicy = PolymorphicPartitionPolicy<
     sample::DistPrefixes>;
 
 template <typename Char, typename PolymorphicPolicy>
-PolymorphicPolicy
-init_partition_policy(SamplerArgs const& sampler, SplitterSorter splitter_sorter) {
-    auto disptach_policy = [&]<typename PartitionPolicy>(){
+PolymorphicPolicy init_partition_policy(SamplerArgs const& sampler,
+                                        SplitterSorter splitter_sorter) {
+    auto disptach_policy = [&]<typename PartitionPolicy>() {
         return PolymorphicPolicy{PartitionPolicy{sampler.sampling_factor}};
     };
 
-    auto dispatch_sorter = [&]<typename SamplePolicy>(){
+    auto dispatch_sorter = [&]<typename SamplePolicy>() {
         using namespace dss_mehnert::partition;
 
         constexpr bool indexed = SamplePolicy::is_indexed;
@@ -649,7 +612,7 @@ init_partition_policy(SamplerArgs const& sampler, SplitterSorter splitter_sorter
         tlx_die("unknown splitter sorter");
     };
 
-    auto dispatch_sampler = [&]<bool indexed, bool random>(){
+    auto dispatch_sampler = [&]<bool indexed, bool random>() {
         using namespace dss_mehnert::sample;
 
         if (sampler.sample_chars) {
@@ -661,7 +624,7 @@ init_partition_policy(SamplerArgs const& sampler, SplitterSorter splitter_sorter
         }
     };
 
-    auto dispatch_random = [&]<bool indexed>(){
+    auto dispatch_random = [&]<bool indexed>() {
         if (sampler.sample_random) {
             return dispatch_sampler.template operator()<indexed, true>();
         } else {

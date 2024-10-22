@@ -88,24 +88,20 @@ auto generate_strings(SorterArgs const& args, dss_mehnert::Communicator const& c
                 tlx_die("not implemented");
             }
             case StringGenerator::dn_ratio: {
-                return DNRatioGenerator<StringSet>{
-                    args.scaled_strings(comm),
-                    args.len_strings,
-                    args.dn_ratio,
-                    comm
-                };
+                return DNRatioGenerator<StringSet>{args.scaled_strings(comm),
+                                                   args.len_strings,
+                                                   args.dn_ratio,
+                                                   comm};
             }
             case StringGenerator::file: {
                 check_path_exists(args.path);
                 return FileDistributer<StringSet>{args.path, comm};
             }
             case StringGenerator::skewed_dn_ratio: {
-                return SkewedDNRatioGenerator<StringSet>{
-                    args.scaled_strings(comm),
-                    args.len_strings,
-                    args.dn_ratio,
-                    comm
-                };
+                return SkewedDNRatioGenerator<StringSet>{args.scaled_strings(comm),
+                                                         args.len_strings,
+                                                         args.dn_ratio,
+                                                         comm};
             }
             case StringGenerator::suffix: {
                 check_path_exists(args.path);
@@ -130,9 +126,9 @@ auto generate_strings(SorterArgs const& args, dss_mehnert::Communicator const& c
 }
 
 template <typename CharType, typename AlltoallConfig, typename BloomFilterPolicy>
-void run_merge_sort(
-    SorterArgs const& args, std::string prefix, dss_mehnert::Communicator const& comm
-) {
+void run_merge_sort(SorterArgs const& args,
+                    std::string prefix,
+                    dss_mehnert::Communicator const& comm) {
     constexpr auto alltoall_config = AlltoallConfig();
     using StringSet = dss_mehnert::StringSet<CharType, dss_mehnert::Length>;
     using PartitionPolicy = dss_mehnert::MergeSortPartitionPolicy<CharType>;
@@ -164,13 +160,10 @@ void run_merge_sort(
         measuring_tool.stop("none", "create_communicators", comm);
 
         measuring_tool.start("none", "sorting_overall");
-        MergeSort merge_sort{
-            dss_mehnert::init_partition_policy<CharType, PartitionPolicy>(
-                args.sampler,
-                args.get_splitter_sorter()
-            ),
-            std::move(redistribution)
-        };
+        MergeSort merge_sort{dss_mehnert::init_partition_policy<CharType, PartitionPolicy>(
+                                 args.sampler,
+                                 args.get_splitter_sorter()),
+                             std::move(redistribution)};
         merge_sort.sort(input_container, comms);
         measuring_tool.stop("none", "sorting_overall", comm);
 
@@ -200,14 +193,13 @@ void run_merge_sort(
     dss_mehnert::dispatch_redistribution<StringSet>(dispatch, args);
 }
 
-template <
-    typename CharType,
-    typename AlltoallConfig,
-    typename BloomFilterPolicy,
-    typename Permutation>
-void run_prefix_doubling(
-    SorterArgs const& args, std::string prefix, dss_mehnert::Communicator const& comm
-) {
+template <typename CharType,
+          typename AlltoallConfig,
+          typename BloomFilterPolicy,
+          typename Permutation>
+void run_prefix_doubling(SorterArgs const& args,
+                         std::string prefix,
+                         dss_mehnert::Communicator const& comm) {
     constexpr auto alltoall_config = AlltoallConfig();
     using StringSet = dss_mehnert::StringSet<CharType, dss_mehnert::IntLength>;
     using PartitionPolicy =
@@ -215,12 +207,12 @@ void run_prefix_doubling(
 
     auto dispatch = [&]<typename RedistributionPolicy>(RedistributionPolicy redistribution) {
         using Subcommunicators = RedistributionPolicy::Subcommunicators;
-        using MergeSort = dss_mehnert::sorter::prefix_doubling::PrefixDoublingMergeSort<
-            alltoall_config,
-            RedistributionPolicy,
-            PartitionPolicy,
-            BloomFilterPolicy,
-            Permutation>;
+        using MergeSort =
+            dss_mehnert::sorter::prefix_doubling::PrefixDoublingMergeSort<alltoall_config,
+                                                                          RedistributionPolicy,
+                                                                          PartitionPolicy,
+                                                                          BloomFilterPolicy,
+                                                                          Permutation>;
 
         using dss_mehnert::measurement::MeasuringTool;
         auto& measuring_tool = MeasuringTool::measuringTool();
@@ -245,13 +237,10 @@ void run_prefix_doubling(
         measuring_tool.stop("none", "create_communicators", comm);
 
         measuring_tool.start("none", "sorting_overall");
-        MergeSort merge_sort{
-            dss_mehnert::init_partition_policy<CharType, PartitionPolicy>(
-                args.sampler,
-                args.get_splitter_sorter()
-            ),
-            std::move(redistribution)
-        };
+        MergeSort merge_sort{dss_mehnert::init_partition_policy<CharType, PartitionPolicy>(
+                                 args.sampler,
+                                 args.get_splitter_sorter()),
+                             std::move(redistribution)};
         auto permutation = merge_sort.sort(std::move(input_container), comms);
         measuring_tool.stop("none", "sorting_overall", comm);
 
@@ -277,9 +266,9 @@ void run_prefix_doubling(
 }
 
 template <typename... Args>
-void dispatch_permutation(
-    SorterArgs const& args, std::string prefix, dss_mehnert::Communicator const& comm
-) {
+void dispatch_permutation(SorterArgs const& args,
+                          std::string prefix,
+                          dss_mehnert::Communicator const& comm) {
     using namespace dss_mehnert;
 
     switch (clamp_enum_value<Permutation>(args.permutation)) {
@@ -330,44 +319,34 @@ int main(int argc, char* argv[]) {
 
     add_common_args(args, cp);
 
-    cp.add_size_t(
-        'k',
-        "generator",
-        args.string_generator,
-        "type of string generation to use "
-        "(0=skewed, [1]=DNGen, 2=file, 3=skewedDNGen, 4=suffixGen)"
-    );
-    cp.add_size_t(
-        'o',
-        "permutation",
-        args.permutation,
-        "type of permutation to use for PDMS "
-        "([0]=simple, 1=multi-level)"
-    );
+    cp.add_size_t('k',
+                  "generator",
+                  args.string_generator,
+                  "type of string generation to use "
+                  "(0=skewed, [1]=DNGen, 2=file, 3=skewedDNGen, 4=suffixGen)");
+    cp.add_size_t('o',
+                  "permutation",
+                  args.permutation,
+                  "type of permutation to use for PDMS "
+                  "([0]=simple, 1=multi-level)");
     cp.add_string('y', "path", args.path, "path to input file");
     cp.add_double('r', "DN-ratio", args.dn_ratio, "D/N ratio of generated strings");
     cp.add_size_t('n', "num-strings", args.num_strings, "number of strings to be generated");
     cp.add_size_t('m', "len-strings", args.len_strings, "length of generated strings");
-    cp.add_size_t(
-        'b',
-        "min-len-strings",
-        args.len_strings_min,
-        "minimum length of generated strings"
-    );
-    cp.add_size_t(
-        'B',
-        "max-len-strings",
-        args.len_strings_max,
-        "maximum length of generated strings"
-    );
+    cp.add_size_t('b',
+                  "min-len-strings",
+                  args.len_strings_min,
+                  "minimum length of generated strings");
+    cp.add_size_t('B',
+                  "max-len-strings",
+                  args.len_strings_max,
+                  "maximum length of generated strings");
     cp.add_flag('x', "strong-scaling", args.strong_scaling, "perform a strong scaling experiment");
 
     std::vector<std::string> levels_param;
-    cp.add_opt_param_stringlist(
-        "group-size",
-        levels_param,
-        "size of groups for multi-level merge sort"
-    );
+    cp.add_opt_param_stringlist("group-size",
+                                levels_param,
+                                "size of groups for multi-level merge sort");
 
     if (!cp.process(argc, argv)) {
         return EXIT_FAILURE;
@@ -385,7 +364,9 @@ int main(int argc, char* argv[]) {
     } else {
         for (size_t i = 0; i < args.num_iterations; ++i) {
             args.iteration = i;
-            dispatch_common_args([&]<typename... T>() { dispatch_sorter<T...>(args); }, args);
+            dispatch_common_args(
+                [&]<typename... T>() { dispatch_sorter<T...>(args); },
+                args);
         }
     }
 

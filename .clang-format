@@ -1,5 +1,5 @@
 AccessModifierOffset: '-4'
-AlignAfterOpenBracket: BlockIndent
+# AlignAfterOpenBracket: BlockIndent
 AlignConsecutiveMacros: 'true'
 AlignConsecutiveAssignments: 'false'
 AlignConsecutiveDeclarations: 'false'
@@ -72,7 +72,7 @@ SpacesInSquareBrackets: 'false'
 Standard: Auto
 TabWidth: '4'
 UseTab: Never
-EmptyLineBeforeAccessModifier: LogicalBlock
-EmptyLineAfterAccessModifier: Never
-QualifierAlignment: Custom
-QualifierOrder: ['static', 'inline', 'constexpr', 'type', 'const', 'volatile']
+# EmptyLineBeforeAccessModifier: LogicalBlock
+# EmptyLineAfterAccessModifier: Never
+# QualifierAlignment: Custom
+# QualifierOrder: ['static', 'inline', 'constexpr', 'type', 'const', 'volatile']

@@ -16,12 +16,10 @@ namespace dss_mehnert {
 namespace mpi {
 
 template <typename CharType>
-void rotate_strings_right(
-    std::vector<CharType> const& source,
-    std::vector<CharType>& dest,
-    bool const skip_rank,
-    Communicator const& comm
-) {
+void rotate_strings_right(std::vector<CharType> const& source,
+                          std::vector<CharType>& dest,
+                          bool const skip_rank,
+                          Communicator const& comm) {
     namespace kmp = kamping;
     int const tag = comm.default_tag();
 

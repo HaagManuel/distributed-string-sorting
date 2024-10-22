@@ -120,19 +120,15 @@ auto generate_compressed_strings(SorterArgs const& args, dss_mehnert::Communicat
                 return CompressedSuffixGenerator<StringSet>{input_chars, args.step};
             }
             case StringGenerator::window: {
-                return CompressedWindowGenerator<StringSet>{
-                    input_chars,
-                    args.len_strings,
-                    args.step
-                };
+                return CompressedWindowGenerator<StringSet>{input_chars,
+                                                            args.len_strings,
+                                                            args.step};
             }
             case StringGenerator::difference_cover: {
-                return CompressedDifferenceCoverGenerator<StringSet>{
-                    input_chars,
-                    args.difference_cover,
-                    args.use_proper_dc,
-                    comm
-                };
+                return CompressedDifferenceCoverGenerator<StringSet>{input_chars,
+                                                                     args.difference_cover,
+                                                                     args.use_proper_dc,
+                                                                     comm};
             }
             case StringGenerator::sentinel: {
                 break;
@@ -147,12 +143,10 @@ auto generate_compressed_strings(SorterArgs const& args, dss_mehnert::Communicat
                 return {std::move(input_chars), std::move(input_strings)};
             }
             case CombinedGenerator::dn_ratio: {
-                return CompressedDNRatioGenerator<StringSet>{
-                    args.num_strings,
-                    args.len_strings,
-                    args.dn_ratio,
-                    comm
-                };
+                return CompressedDNRatioGenerator<StringSet>{args.num_strings,
+                                                             args.len_strings,
+                                                             args.dn_ratio,
+                                                             comm};
             }
             case CombinedGenerator::sentinel: {
                 break;
@@ -181,16 +175,15 @@ auto generate_compressed_strings(SorterArgs const& args, dss_mehnert::Communicat
     return input_container;
 }
 
-inline std::vector<size_t>
-distribute_ranks(std::vector<size_t> const& global_ranks, dss_mehnert::Communicator const& comm) {
+inline std::vector<size_t> distribute_ranks(std::vector<size_t> const& global_ranks,
+                                            dss_mehnert::Communicator const& comm) {
     namespace kmp = kamping;
 
     auto const begin = global_ranks.begin(), end = global_ranks.end();
     auto const local_max = std::max_element(begin, end);
-    auto const upper_bound = comm.allreduce_single(
-        kmp::send_buf(local_max == end ? 0 : *local_max + 1),
-        kmp::op(kmp::ops::max<>{})
-    );
+    auto const upper_bound =
+        comm.allreduce_single(kmp::send_buf(local_max == end ? 0 : *local_max + 1),
+                              kmp::op(kmp::ops::max<>{}));
     auto const interval_size = tlx::div_ceil(upper_bound, comm.size());
     auto const dest = [=](auto const rank) { return rank / interval_size; };
 
@@ -204,9 +197,8 @@ distribute_ranks(std::vector<size_t> const& global_ranks, dss_mehnert::Communica
     return recv_buf;
 }
 
-inline void count_duplicate_ranks(
-    std::vector<size_t> const& global_ranks, dss_mehnert::Communicator const& comm
-) {
+inline void count_duplicate_ranks(std::vector<size_t> const& global_ranks,
+                                  dss_mehnert::Communicator const& comm) {
     auto dist_ranks = distribute_ranks(global_ranks, comm);
     size_t total_ranks = dist_ranks.size(), distinct_ranks = 0, duplicate_ranks = 0;
 
@@ -238,9 +230,9 @@ inline void count_duplicate_ranks(
 }
 
 template <typename CharType, typename AlltoallConfig, typename BloomFilter, typename Permutation>
-void run_space_efficient_sort(
-    SorterArgs const& args, std::string prefix, dss_mehnert::Communicator const& comm
-) {
+void run_space_efficient_sort(SorterArgs const& args,
+                              std::string prefix,
+                              dss_mehnert::Communicator const& comm) {
     namespace sems = dss_mehnert::sorter::space_efficient;
 
     using dss_mehnert::IntLength;
@@ -278,14 +270,11 @@ void run_space_efficient_sort(
         measuring_tool.stop("none", "create_communicators", comm);
 
         measuring_tool.start("none", "sorting_overall");
-        Sorter merge_sort{
-            std::move(bloom_filter),
-            dss_mehnert::init_partition_policy<CharType, PartitionPolicy>(
-                args.quantile_sampler,
-                args.get_splitter_sorter()
-            ),
-            args.quantile_size
-        };
+        Sorter merge_sort{std::move(bloom_filter),
+                          dss_mehnert::init_partition_policy<CharType, PartitionPolicy>(
+                              args.quantile_sampler,
+                              args.get_splitter_sorter()),
+                          args.quantile_size};
         auto global_ranks = merge_sort.sort(std::move(input_container), comms);
         measuring_tool.stop("none", "sorting_overall", comm);
 
@@ -311,24 +300,20 @@ void run_space_efficient_sort(
         if (args.prefix_doubling) {
             using BloomFilterPolicy =
                 sems::BloomFilterFirst<config, RedistributionPolicy, PartitionPolicy, BloomFilter>;
-            run_sorter(BloomFilterPolicy{
-                dss_mehnert::init_partition_policy<CharType, PartitionPolicy>(
-                    args.sampler,
-                    args.get_splitter_sorter()
-                ),
-                std::move(redistribution)
-            });
+            run_sorter(
+                BloomFilterPolicy{dss_mehnert::init_partition_policy<CharType, PartitionPolicy>(
+                                      args.sampler,
+                                      args.get_splitter_sorter()),
+                                  std::move(redistribution)});
         } else {
             // todo maybe add cmake flag for this
             using BloomFilterPolicy =
                 sems::NoBloomFilter<config, RedistributionPolicy, PartitionPolicy>;
-            run_sorter(BloomFilterPolicy{
-                dss_mehnert::init_partition_policy<CharType, PartitionPolicy>(
-                    args.sampler,
-                    args.get_splitter_sorter()
-                ),
-                std::move(redistribution)
-            });
+            run_sorter(
+                BloomFilterPolicy{dss_mehnert::init_partition_policy<CharType, PartitionPolicy>(
+                                      args.sampler,
+                                      args.get_splitter_sorter()),
+                                  std::move(redistribution)});
         }
     };
 
@@ -378,53 +363,37 @@ int main(int argc, char* argv[]) {
     add_common_args(args, cp);
 
     bool use_quantile_sampler = false;
-    cp.add_flag(
-        "use-quantile-sampler",
-        use_quantile_sampler,
-        "use separate quantile sampling policy"
-    );
-    cp.add_flag(
-        "quantile-chars",
-        args.quantile_sampler.sample_chars,
-        "use character based sampling for quantiles"
-    );
-    cp.add_flag(
-        "quantile-indexed",
-        args.quantile_sampler.sample_indexed,
-        "use indexed sampling for quantiles"
-    );
-    cp.add_flag(
-        "quantile-random",
-        args.quantile_sampler.sample_random,
-        "use random sampling for quantiles"
-    );
-    cp.add_size_t(
-        "quantile-factor",
-        args.quantile_sampler.sampling_factor,
-        "use the given oversampling factor for quantiles"
-    );
+    cp.add_flag("use-quantile-sampler",
+                use_quantile_sampler,
+                "use separate quantile sampling policy");
+    cp.add_flag("quantile-chars",
+                args.quantile_sampler.sample_chars,
+                "use character based sampling for quantiles");
+    cp.add_flag("quantile-indexed",
+                args.quantile_sampler.sample_indexed,
+                "use indexed sampling for quantiles");
+    cp.add_flag("quantile-random",
+                args.quantile_sampler.sample_random,
+                "use random sampling for quantiles");
+    cp.add_size_t("quantile-factor",
+                  args.quantile_sampler.sampling_factor,
+                  "use the given oversampling factor for quantiles");
 
-    cp.add_size_t(
-        'b',
-        "combined-generator",
-        args.combined_gen,
-        "combined char/string generator to use"
-        "([0]=none, 1=dn-ratio)"
-    );
-    cp.add_size_t(
-        'c',
-        "char-generator",
-        args.char_gen,
-        "char generator to use "
-        "([0]=random, 1=file, 2=file-segment)"
-    );
-    cp.add_size_t(
-        's',
-        "string-generator",
-        args.string_gen,
-        "string generator to use "
-        "([0]=suffix, 1=window, 2=difference_cover)"
-    );
+    cp.add_size_t('b',
+                  "combined-generator",
+                  args.combined_gen,
+                  "combined char/string generator to use"
+                  "([0]=none, 1=dn-ratio)");
+    cp.add_size_t('c',
+                  "char-generator",
+                  args.char_gen,
+                  "char generator to use "
+                  "([0]=random, 1=file, 2=file-segment)");
+    cp.add_size_t('s',
+                  "string-generator",
+                  args.string_gen,
+                  "string generator to use "
+                  "([0]=suffix, 1=window, 2=difference_cover)");
     cp.add_flag("use-proper-dc", args.use_proper_dc, "use proper difference cover strings");
     cp.add_size_t('n', "num-strings", args.num_strings, "number of strings per PE");
     cp.add_size_t('m', "len-strings", args.len_strings, "number of characters per string");
@@ -434,26 +403,20 @@ int main(int argc, char* argv[]) {
     cp.add_size_t('D', "difference-cover", args.difference_cover, "size of difference cover");
     cp.add_flag("shuffle", args.shuffle, "shuffle the generated strings");
     cp.add_string('y', "path", args.path, "path to input file");
-    cp.add_size_t(
-        'o',
-        "permutation",
-        args.permutation,
-        "type of permutation to use for SEMS"
-        "(0=simple, [1]=multi-level, 2=non-unique)"
-    );
-    cp.add_bytes(
-        'q',
-        "quantile-size",
-        args.quantile_size,
-        "work on quantiles of the given size [default: 100MiB]"
-    );
+    cp.add_size_t('o',
+                  "permutation",
+                  args.permutation,
+                  "type of permutation to use for SEMS"
+                  "(0=simple, [1]=multi-level, 2=non-unique)");
+    cp.add_bytes('q',
+                 "quantile-size",
+                 args.quantile_size,
+                 "work on quantiles of the given size [default: 100MiB]");
 
     std::vector<std::string> levels_param;
-    cp.add_opt_param_stringlist(
-        "group-size",
-        levels_param,
-        "size of groups for multi-level merge sort"
-    );
+    cp.add_opt_param_stringlist("group-size",
+                                levels_param,
+                                "size of groups for multi-level merge sort");
 
     if (!cp.process(argc, argv)) {
         return EXIT_FAILURE;
@@ -473,7 +436,9 @@ int main(int argc, char* argv[]) {
     } else {
         for (size_t i = 0; i < args.num_iterations; ++i) {
             args.iteration = i;
-            dispatch_common_args([&]<typename... T>() { dispatch_permutation<T...>(args); }, args);
+            dispatch_common_args(
+                [&]<typename... T>() { dispatch_permutation<T...>(args); },
+                args);
         }
     }
     return EXIT_SUCCESS;

@@ -29,12 +29,11 @@
 
 namespace dss_mehnert {
 
-inline std::pair<SimplePermutation, std::vector<size_t>> make_input_permutation(
-    std::vector<size_t> const& global_permutation,
-    Communicator const& comm,
-    size_t const lower_bound = 0,
-    size_t const upper_bound = std::numeric_limits<size_t>::max()
-) {
+inline std::pair<SimplePermutation, std::vector<size_t>>
+make_input_permutation(std::vector<size_t> const& global_permutation,
+                       Communicator const& comm,
+                       size_t const lower_bound = 0,
+                       size_t const upper_bound = std::numeric_limits<size_t>::max()) {
     using namespace kamping;
 
     auto const size = global_permutation.size();
@@ -88,16 +87,13 @@ get_predecessor(T const& last_elem, bool const is_empty, Communicator const& com
     using namespace kamping;
 
     auto const bottom = -1, top = comm.size_signed();
-    auto const predecessor = comm.exscan_single(
-        send_buf(is_empty ? bottom : comm.rank_signed()),
-        op(ops::max<>{}),
-        values_on_rank_0(bottom)
-    );
-    auto const successor = reverse_comm(comm).exscan_single(
-        send_buf(is_empty ? top : comm.rank_signed()),
-        op(ops::min<>{}),
-        values_on_rank_0(top)
-    );
+    auto const predecessor = comm.exscan_single(send_buf(is_empty ? bottom : comm.rank_signed()),
+                                                op(ops::max<>{}),
+                                                values_on_rank_0(bottom));
+    auto const successor =
+        reverse_comm(comm).exscan_single(send_buf(is_empty ? top : comm.rank_signed()),
+                                         op(ops::min<>{}),
+                                         values_on_rank_0(top));
 
     std::optional<T> result;
     if (!is_empty) {
@@ -121,9 +117,9 @@ get_predecessor(T const& last_elem, bool const is_empty, Communicator const& com
 
 template <typename StringSet>
 std::pair<std::vector<typename StringSet::Char>, std::vector<typename StringSet::Char>>
-get_permutation_first_last_strings(
-    StringSet const& ss, SimplePermutation const& permutation, Communicator const& comm
-) {
+get_permutation_first_last_strings(StringSet const& ss,
+                                   SimplePermutation const& permutation,
+                                   Communicator const& comm) {
     namespace pdms = dss_mehnert::sorter::prefix_doubling;
 
     std::vector<typename StringSet::Char> first_string{0}, last_string{0};
@@ -132,8 +128,7 @@ get_permutation_first_last_strings(
     } else {
         SimplePermutation const sentinels{
             {permutation.ranks().front(), permutation.ranks().back()},
-            {permutation.strings().front(), permutation.strings().back()}
-        };
+            {permutation.strings().front(), permutation.strings().back()}};
 
         auto sentinel_strings = pdms::apply_permutation(ss, sentinels, comm);
         first_string = sentinel_strings.get_raw_string(0);
@@ -143,12 +138,10 @@ get_permutation_first_last_strings(
 }
 
 template <typename Char>
-bool check_global_order(
-    std::vector<Char> const& first_string,
-    std::vector<Char> const& last_string,
-    bool const is_empty,
-    Communicator const& comm
-) {
+bool check_global_order(std::vector<Char> const& first_string,
+                        std::vector<Char> const& last_string,
+                        bool const is_empty,
+                        Communicator const& comm) {
     assert_equal(first_string.back(), 0);
     assert_equal(last_string.back(), 0);
 
@@ -161,16 +154,16 @@ bool check_global_order(
 }
 
 template <typename StringSet>
-bool check_permutation_global_order(
-    StringSet const& ss, SimplePermutation const& permutation, Communicator const& comm
-) {
+bool check_permutation_global_order(StringSet const& ss,
+                                    SimplePermutation const& permutation,
+                                    Communicator const& comm) {
     auto const [first, last] = get_permutation_first_last_strings(ss, permutation, comm);
     return check_global_order(first, last, permutation.empty(), comm);
 }
 
-inline bool check_permutation_complete(
-    SimplePermutation const& permutation, size_t const local_size, Communicator const& comm
-) {
+inline bool check_permutation_complete(SimplePermutation const& permutation,
+                                       size_t const local_size,
+                                       Communicator const& comm) {
     std::vector<int> counts(comm.size());
     for (auto const& rank: permutation.ranks()) {
         ++counts[rank];
@@ -198,9 +191,8 @@ inline bool check_permutation_complete(
 
 template <typename StringSet>
 void copy_container(StringLcpContainer<StringSet> const& src, StringLcpContainer<StringSet>& dst) {
-    
     assert(src.is_consistent());
-    
+
     std::vector<typename StringSet::String> strings{src.get_strings()};
     std::vector<typename StringSet::Char> raw_strings{src.raw_strings()};
     std::vector<size_t> lcps(src.size());
@@ -264,11 +256,9 @@ public:
         return initial_num_chars == sorted_num_chars && initial_num_strings == sorted_num_strings;
     }
 
-    bool check_lcps(
-        std::span<size_t const> input_lcps,
-        std::span<size_t const> sorted_lcps,
-        dss_mehnert::Communicator const& comm
-    ) {
+    bool check_lcps(std::span<size_t const> input_lcps,
+                    std::span<size_t const> sorted_lcps,
+                    dss_mehnert::Communicator const& comm) {
         size_t counter = 0u;
         for (size_t i = 0; i != input_lcps.size(); ++i) {
             if (input_lcps[i] == sorted_lcps[i]) {
@@ -279,8 +269,8 @@ public:
                && counter + comm.size() >= sorted_lcps.size();
     }
 
-    bool
-    check_exhaustive(StringContainer& sorted_container, dss_mehnert::Communicator const& comm) {
+    bool check_exhaustive(StringContainer& sorted_container,
+                          dss_mehnert::Communicator const& comm) {
         using namespace kamping;
 
         sorted_container.make_contiguous();
@@ -365,9 +355,8 @@ private:
     StringContainer input_container_;
 
     template <typename Subcommunicators>
-    SimplePermutation make_input_permutation(
-        MultiLevelPermutation const& permutation, Subcommunicators const& comms
-    ) {
+    SimplePermutation make_input_permutation(MultiLevelPermutation const& permutation,
+                                             Subcommunicators const& comms) {
         std::vector<size_t> global_permutation(input_container_.size());
         permutation.apply(global_permutation, 0, comms);
         return dss_mehnert::make_input_permutation(global_permutation, comms.comm_root()).first;
@@ -393,8 +382,7 @@ public:
         auto const max_elem = std::max_element(global_ranks.begin(), global_ranks.end());
         auto const max_rank = comm.allreduce_single(
             kamping::send_buf(global_ranks.empty() ? static_cast<size_t>(0) : *max_elem),
-            kamping::op(kamping::ops::max<>{})
-        );
+            kamping::op(kamping::ops::max<>{}));
         auto const quantile_size = tlx::div_ceil(max_rank + 1, num_quantiles);
 
         bool is_sorted = true;
@@ -406,11 +394,9 @@ public:
 
             auto const [quantile_permutation, quantile_ranks] =
                 make_input_permutation(global_ranks, comm, rank_lower, rank_upper);
-            auto quantile = pdms::apply_permutation(
-                input_container_.make_string_set(),
-                quantile_permutation,
-                comm
-            );
+            auto quantile = pdms::apply_permutation(input_container_.make_string_set(),
+                                                    quantile_permutation,
+                                                    comm);
 
             auto const ss = quantile.make_string_set();
             {
@@ -437,10 +423,9 @@ public:
             }
 
 
-            int const last_non_empty = comm.allreduce_single(
-                kamping::send_buf(ss.empty() ? -1 : comm.rank_signed()),
-                kamping::op(kamping::ops::max<>{})
-            );
+            int const last_non_empty =
+                comm.allreduce_single(kamping::send_buf(ss.empty() ? -1 : comm.rank_signed()),
+                                      kamping::op(kamping::ops::max<>{}));
 
             if (comm.is_valid_rank(last_non_empty)) {
                 comm.bcast(send_recv_buf(lower_bound), root(last_non_empty));
@@ -486,12 +471,10 @@ private:
         return comm.allreduce_single(send_buf(local_num_quantiles), op(ops::max<>{}));
     }
 
-    bool check_quantile_order(
-        StringSet const& quantile_strings,
-        std::span<size_t const> quantile_ranks,
-        std::vector<Char> const& string_lower_bound,
-        size_t const rank_lower_bound
-    ) {
+    bool check_quantile_order(StringSet const& quantile_strings,
+                              std::span<size_t const> quantile_ranks,
+                              std::vector<Char> const& string_lower_bound,
+                              size_t const rank_lower_bound) {
         assert_equal(quantile_strings.size(), quantile_ranks.size());
 
         auto pred_string = string_lower_bound.data();

@@ -36,11 +36,9 @@ auto make_initializer(std::vector<typename Member::underlying_t> const& data) {
 namespace _internal {
 
 template <typename StringSet, typename... Member, typename... InputIt, typename OutputIt>
-void init_strings_impl(
-    std::vector<typename StringSet::Char>& raw_strings,
-    std::tuple<Initializer<Member, InputIt>...> initializers,
-    OutputIt d_str
-) {
+void init_strings_impl(std::vector<typename StringSet::Char>& raw_strings,
+                       std::tuple<Initializer<Member, InputIt>...> initializers,
+                       OutputIt d_str) {
     using String = StringSet::String;
 
     auto const begin = raw_strings.begin(), end = raw_strings.end();
@@ -59,25 +57,21 @@ void init_strings_impl(
                 [=](Initializer<Member, InputIt> const&... init) {
                     return String{&*str_begin, str_len, Member{init.begin[i]}...};
                 },
-                initializers
-            );
+                initializers);
         } else {
             *d_str = std::apply(
                 [=](Initializer<Member, InputIt> const&... init) {
                     return String{&*str_begin, Member{init.begin[i]}...};
                 },
-                initializers
-            );
+                initializers);
         }
     }
 }
 
 template <typename StringSet, typename... Member, typename... InputIt>
-void init_strings(
-    std::vector<typename StringSet::Char>& raw_strings,
-    std::vector<typename StringSet::String>& strings,
-    Initializer<Member, InputIt>... initializers_
-) {
+void init_strings(std::vector<typename StringSet::Char>& raw_strings,
+                  std::vector<typename StringSet::String>& strings,
+                  Initializer<Member, InputIt>... initializers_) {
     constexpr size_t string_length_guess = 256;
 
     auto size = [](auto const& initializer) -> size_t {
@@ -126,9 +120,8 @@ public:
           strings_{std::move(strings)} {}
 
     template <typename... Member, typename... InputIt>
-    explicit StringContainer(
-        std::vector<Char>&& raw_strings, Initializer<Member, InputIt>... initalizers
-    )
+    explicit StringContainer(std::vector<Char>&& raw_strings,
+                             Initializer<Member, InputIt>... initalizers)
         : raw_strings_{std::make_unique<std::vector<Char>>(std::move(raw_strings))} {
         _internal::init_strings<StringSet>(*raw_strings_, strings_, initalizers...);
     }
@@ -209,9 +202,7 @@ public:
     }
 
     template <typename _StringSet = StringSet>
-    bool is_consistent() const
-        requires(_StringSet::has_length)
-    {
+    bool is_consistent() const requires(_StringSet::has_length) {
         auto const begin = &*raw_strings_->begin(), end = &*raw_strings_->end();
 
         return std::all_of(strings_.begin(), strings_.end(), [=](auto const& str) {
@@ -240,9 +231,9 @@ public:
 
     explicit StringLcpContainer(size_t const count) : Base{count}, lcps_(count) {}
 
-    StringLcpContainer(
-        std::vector<Char>&& raw_strings, std::vector<String>&& strings, std::vector<size_t>&& lcps
-    )
+    StringLcpContainer(std::vector<Char>&& raw_strings,
+                       std::vector<String>&& strings,
+                       std::vector<size_t>&& lcps)
         : Base{std::move(raw_strings), std::move(strings)},
           lcps_{std::move(lcps)} {}
 
@@ -251,18 +242,15 @@ public:
           lcps_(this->strings_.size()) {}
 
     template <typename... Member, typename... InputIt>
-    explicit StringLcpContainer(
-        std::vector<Char>&& raw_strings, Initializer<Member, InputIt>... initializer
-    )
+    explicit StringLcpContainer(std::vector<Char>&& raw_strings,
+                                Initializer<Member, InputIt>... initializer)
         : Base{std::move(raw_strings), initializer...},
           lcps_(this->size(), 0) {}
 
     template <typename... Member, typename... InputIt>
-    explicit StringLcpContainer(
-        std::vector<Char>&& raw_strings,
-        std::vector<size_t>&& lcps,
-        Initializer<Member, InputIt>... initializer
-    )
+    explicit StringLcpContainer(std::vector<Char>&& raw_strings,
+                                std::vector<size_t>&& lcps,
+                                Initializer<Member, InputIt>... initializer)
         : Base{std::move(raw_strings), initializer...},
           lcps_{std::move(lcps)} {
         assert_equal(this->strings_.size(), lcps_.size());
@@ -297,11 +285,9 @@ public:
     }
 
     template <typename... Member, typename... InputIt>
-    void update(
-        std::vector<Char>&& raw_strings,
-        std::vector<size_t>&& lcps,
-        Initializer<Member, InputIt>... initializers
-    ) {
+    void update(std::vector<Char>&& raw_strings,
+                std::vector<size_t>&& lcps,
+                Initializer<Member, InputIt>... initializers) {
         Base::update(std::move(raw_strings), initializers...);
         lcps_ = std::move(lcps);
     }
@@ -314,9 +300,7 @@ public:
     }
 
     template <typename _StringSet = StringSet_>
-    void extend_prefix(std::span<size_t const> lcps)
-        requires(_StringSet::has_length)
-    {
+    void extend_prefix(std::span<size_t const> lcps) requires(_StringSet::has_length) {
         assert_equal(lcps.size(), this->size());
         assert(lcps.empty() || lcps.front() == 0);
 
